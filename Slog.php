@@ -97,7 +97,7 @@ class Slog
      *
      * @return Slog (supports fluent interface)
      */
-    public function setDebug($status=true)
+    public function setDebug($status = true)
     {
         $this->debug = (bool)$status;
         return $this;
@@ -171,7 +171,11 @@ class Slog
     public function removeCommitsFromAuthor($author)
     {
         if (!is_array($author)) {
-            $author = array($author);
+            $author = explode(',', $author);
+        }
+        $author = array_filter($author);
+        if (empty($author)) {
+            return;
         }
         foreach ($author as $a) {
             $this->removeAuthors[$a] = 1;
@@ -187,12 +191,15 @@ class Slog
      */
     public function matchAuthor($author)
     {
-        if (is_array($author)) {
-            foreach ($author as $a) {
-                $this->mustMatchAuthors[$a] = 1;
-            }
-        } else {
-            $this->mustMatchAuthors[$author] = 1;
+        if (!is_array($author)) {
+            $author = explode(',', $author);
+        }
+        $author = array_filter($author);
+        if (empty($author)) {
+            return;
+        }
+        foreach ($author as $a) {
+            $this->mustMatchAuthors[$a] = 1;
         }
         return $this;
     }

@@ -18,6 +18,18 @@ class CliParser
     const TYPE_FLAG  = 2;
 
     /**
+     * @var int Indicates an input option can be provided as a 
+     *          key/value pair multiple times.
+     *          (i.e., "--var=foo --var=bar" or "--var=foo,bar") 
+     */
+    const TYPE_ARRAY = 3;
+    
+    /**
+     * @var string the delimiter to use with self::TYPE_ARRAY 
+     */
+    const DEFAULT_DELIMITER = ',';
+
+    /**
      * Map of args provided on the command line, keyed by the short name.
      *
      * @var array<string:string>
@@ -68,26 +80,38 @@ class CliParser
     /**
      * Inform the parser of an option that your program accepts.
      *
-     * @var string $short    Single letter short name for the option.
-     * @var string $long     Multi letter long name for the option.
-     * @var string $help     Message to display in usage output.
-     * @var bool   $required True if the user is required to set this option.
-     * @var int    $type     self::TYPE_VALUE or self::TYPE_FLAG
+     * @var string $short     Single letter short name for the option.
+     * @var string $long      Multi letter long name for the option.
+     * @var string $help      Message to display in usage output.
+     * @var bool   $required  True if the user is required to set this option.
+     * @var int    $type      self::TYPE_VALUE or self::TYPE_FLAG or self::TYPE_ARRAY
+     * @var string $delimiter Delimiter to use if $type = self::TYPE_ARRAY
      *
      * @return Opt (supports fluent interface)
      */
-    public function addOpt($short, $long, $help, $required=false, $type=self::TYPE_VALUE)
+    public function addOpt(
+        $short, 
+        $long, 
+        $help, 
+        $required = false, 
+        $type = self::TYPE_VALUE, 
+        $delimiter = self::DEFAULT_DELIMITER
+    )
     {
         $this->longNameMap[$long] = $short;
         if ($this->maxNameLength == 0 || strlen($long) > $this->maxNameLength) {
             $this->maxNameLength = strlen($long);
+        }
+        if ( $type == self::TYPE_ARRAY && empty($delimiter) ) {
+            $delimiter = self::DEFAULT_DELIMITER;
         }
         $this->spec[$short] = array(
                 'short'    => $short,
                 'long'     => $long,
                 'help'     => $help,
                 'required' => $required,
-                'type'     => $type);
+                'type'     => $type,
+                'delimiter'=> $delimiter);
         return $this;
     }
 
@@ -119,6 +143,16 @@ class CliParser
                     $this->debug("load():    MATCHES ({$spec['short']}, {$spec['long']})");
                     if ($spec['type'] == self::TYPE_FLAG) {
                         $this->opts[$spec['short']] = true;
+                    } elseif ($spec['type'] == self::TYPE_ARRAY) {
+                        if ( strpos($value, $spec['delimiter']) !== false ) {
+                            $value = explode($spec['delimiter'], $value);
+                            $value = array_filter($value);
+                            foreach ($value as $v) {
+                                $this->opts[$spec['short']][] = $v;
+                            }
+                        } else {
+                            $this->opts[$spec['short']][] = $value;
+                        }
                     } else {
                         $this->opts[$spec['short']] = $value;
                     }

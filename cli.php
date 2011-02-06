@@ -12,7 +12,7 @@ $cli->about('Wrapper around the SVN command line tool that provides '
                     . 'additional filtering capabilities such as '
                     . 'filtering by regex and author.')
     ->addOpt('a', 'author', 'Only show commits written by author. '
-                    . 'Set this repeatedly to cast a larger net.')
+                    . 'Set this repeatedly to cast a larger net.', false, CliParser::TYPE_ARRAY, ',')
     ->addOpt('c', 'color', 'Use color to style output.', false, CliParser::TYPE_FLAG)
     ->addOpt('d', 'days', 'Number of days of data to fetch.')
     ->addOpt('e', 'regex', "Only show commits that match regex. Set this "
@@ -20,6 +20,8 @@ $cli->about('Wrapper around the SVN command line tool that provides '
                     . "e.g., /component/")
     ->addOpt('f', 'format', 'Format type: summary (default), oneline')
     ->addOpt('h', 'help', 'Show usage.', false, CliParser::TYPE_FLAG)
+    ->addOpt('i', 'ignore', 'Exclude commits written by author. '
+                    . 'Set this repeatedly to cast a larger net.', false, CliParser::TYPE_ARRAY, ',')
     ->addOpt('l', 'limit', 'Limit the number of commits to search')
     ->addOpt('r', 'repo', "SVN repository, e.g., http://svn.host.com/project.\n"
                     . "If not specified but CWD is a working copy, the working "
@@ -65,8 +67,12 @@ $slog = new Slog($cli->get('repo',  $repo),
 if ($cli->get('verbose')) {
     $slog->setDebug(true);
 }
+
 if ($cli->get('author')) {
     $slog->matchAuthor($cli->get('author'));
+}
+if ($cli->get('ignore')) {
+    $slog->removeCommitsFromAuthor($cli->get('ignore'));
 }
 if ($cli->get('regex')) {
     $slog->matchRegex($cli->get('regex'));
