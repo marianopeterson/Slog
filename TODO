@@ -1,13 +1,1 @@
-* Reverse commits (show most recent at top)
-    Currently you scan commits bottom-up,
-    then read comments within the commit top-down.
-    This is counter intuitive and makes its hard to read.
-
-* Add diff command
-    slog diff -rNNN -- where NNN is the revision whose changes you want to review
-
-* Allow multiple match authors to be specified on the CLI.
-    e.g.,   --author=foo,bar
-            --author foo bar
-            -a foo bar
-            -a=foo bar
+* Add unit tests
