@@ -166,7 +166,7 @@ class Slog
      *
      * @param string|array<string> $author Author(s) whose commits will be removed.
      *
-     * @return void
+     * @return Slog (supports fluent interface)
      */
     public function removeCommitsFromAuthor($author)
     {
@@ -174,12 +174,10 @@ class Slog
             $author = explode(',', $author);
         }
         $author = array_filter($author);
-        if (empty($author)) {
-            return;
-        }
         foreach ($author as $a) {
             $this->removeAuthors[$a] = 1;
         }
+        return $this;
     }
     
     /**
@@ -195,9 +193,6 @@ class Slog
             $author = explode(',', $author);
         }
         $author = array_filter($author);
-        if (empty($author)) {
-            return;
-        }
         foreach ($author as $a) {
             $this->mustMatchAuthors[$a] = 1;
         }

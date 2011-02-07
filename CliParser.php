@@ -18,14 +18,14 @@ class CliParser
     const TYPE_FLAG  = 2;
 
     /**
-     * @var int Indicates an input option can be provided as a 
+     * @var int Indicates an input option can be provided as a
      *          key/value pair multiple times.
-     *          (i.e., "--var=foo --var=bar" or "--var=foo,bar") 
+     *          (i.e., "--var=foo --var=bar" or "--var=foo,bar")
      */
     const TYPE_ARRAY = 3;
-    
+
     /**
-     * @var string the delimiter to use with self::TYPE_ARRAY 
+     * @var string the delimiter to use with self::TYPE_ARRAY
      */
     const DEFAULT_DELIMITER = ',';
 
@@ -90,11 +90,11 @@ class CliParser
      * @return Opt (supports fluent interface)
      */
     public function addOpt(
-        $short, 
-        $long, 
-        $help, 
-        $required = false, 
-        $type = self::TYPE_VALUE, 
+        $short,
+        $long,
+        $help,
+        $required = false,
+        $type = self::TYPE_VALUE,
         $delimiter = self::DEFAULT_DELIMITER
     )
     {
