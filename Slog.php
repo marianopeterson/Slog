@@ -208,12 +208,20 @@ class Slog
      */
     public function matchRegex($pattern)
     {
-        if (is_array($pattern)) {
-            foreach ($pattern as $p) {
-                $this->mustMatchRegexes[] = $p;
+        if (!is_array($pattern)) {
+            $pattern = array($pattern);
+        }
+        foreach ($pattern as $p) {
+            // Regex patterns must be wrapped by non alpha-numeric and
+            // non backslash characters. e.g., /pattern/ #pattern# ~pattern~
+            // If the user provided a pattern that isn't delimited this way,
+            // lets wrap the pattern with delimiters for them.
+            if (preg_match("/[[:alnum:]\\\]/", $p[0])) {
+                $delim = '/';
+                $p     = $delim . preg_quote($p, $delim) . $delim;
             }
-        } else {
-            $this->mustMatchRegexes[] = $pattern;
+            $this->debug("Adding regex: $p");
+            $this->mustMatchRegexes[] = $p;
         }
         return $this;
     }
