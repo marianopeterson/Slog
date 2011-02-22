@@ -62,6 +62,23 @@ class Slog
     private $limit;
 
     /**
+     * Whether or not to follow commit history beyond the current branch and
+     * into the origin branch.
+     *
+     * @var bool
+     */
+    private $stopOnCopy;
+
+    /**
+     * String of command line options to send to svn log. This is intended to
+     * store options that were unrecognized by Slog so that we can pass them
+     * along to svn log instead.
+     *
+     * @var string
+     */
+    private $svnOpts;
+
+    /**
      * Path to the SVN binary.
      *
      * @var string
@@ -76,20 +93,130 @@ class Slog
     private $formatter;
 
     /**
-     * @param string $repo  Path to the SVN repo.
-     * @param int    $days  Fetch commits submitted within this number of days.
      * @param int    $limit Max number of commits to fetch from the SVN repo.
      */
-    public function __construct($repo, $days, $limit)
+    public function __construct()
     {
         $this->debug = false;
         $this->removeAuthors = array();
         $this->mustMatchAuthors = array();
         $this->mustMatchRegexes = array();
-        $this->repo = $repo;
-        $this->days = $days;
-        $this->limit = $limit;
+        $this->repo = null;
+        $this->days = null;
+        $this->limit = null;
+        $this->stopOnCopy = true;
+        $this->svnOpts = '';
         $this->svn = '/usr/bin/env svn';
+    }
+
+    /**
+     * Override the path to the SVN repo.
+     *
+     * @param string $path Filepath or URL to the SVN repo.
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setRepo($path)
+    {
+        $this->repo = $repoUrl;
+        return $this;
+    }
+
+    /**
+     * Get repo for working copy at $path.
+     *
+     * @param string $path
+     *
+     * @return string|null URL for SVN repo associated with Working Copy at
+     *                     $path.
+     */
+    public function getRepoFromWorkingCopy($path)
+    {
+        $repo     = null;
+        $cmd      = "{$this->svn} info 2>/dev/null";
+        $stdOut   = array();
+        $exitCode = null;
+        $lastLine = exec($cmd, $stdOut, $exitCode);
+        foreach ($stdOut as $line) {
+            if (substr($line, 0, 5) == 'URL: ') {
+                $repo = substr($line, 5);
+                break;
+            }
+        }
+        // $repo will be null if svn couldn't get the repo URL for the
+        // working copy at $path
+        return $repo;
+    }
+
+    /**
+     * Get path to SVN repo.
+     * If repo was set with $slog->setRepo($repo), then $repo is used.
+     * Otherwise if the CWD is a working copy, the working copy's repo is used.
+     * Otherwise if the environment variable SLOG_DEFAULT_REPO exists, that is used.
+     * If none of the above can be resolved, an exception is thrown.
+     *
+     * @throws Exception if none of the above methods are able to resolve the repo URL.
+     *
+     * @return string|null URL for SVN repo.
+     */
+    public function getRepo()
+    {
+        if (empty($this->repo)) {
+            $this->repo = $this->getRepoFromWorkingCopy(getcwd());
+        }
+        if (empty($this->repo)) {
+            if (isset($_SERVER['SLOG_DEFAULT_REPO'])) {
+                $this->repo = $_SERVER['SLOG_DEFAULT_REPO'];
+            }
+        }
+        if (empty($this->repo)) {
+            throw new Exception("Could not determine the SVN repo. Its likely "
+                    . "that the current directory is not a working copy.");
+        }
+        return $this->repo;
+    }
+
+    /**
+     * Set the maximum number of days worth of historical data to fetch from svn log.
+     *
+     * @param int $days Maximum number of days worth of historical data to
+     *                  fetch from svn log.
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setDays($days)
+    {
+        $this->days = (int)$days;
+        return $this;
+    }
+
+    /**
+     * @return int Number of days of historical data to fetch from svn log.
+     */
+    public function getDays()
+    {
+        return $this->days;
+    }
+
+    /**
+     * Set the max number of commits to fetch from the SVN server.
+     *
+     * @param int $limit Max number of commits to fetch from the SVN server.
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setLimit($limit)
+    {
+        $this->limit = (int) $limit;
+        return $this;
+    }
+
+    /**
+     * @return int Max number of commits to fetch from the SVN server.
+     */
+    public function getLimit()
+    {
+        return $this->limit;
     }
 
     /**
@@ -120,20 +247,46 @@ class Slog
             print "[DEBUG] $msg\n";
         }
     }
-    
-    private function load($repo, $days, $limit)
+
+    /**
+     * Set whether or not to follow commits past the current branch to the origin.
+     *
+     * @param bool $bool Set true to only show commits from the current branch,
+     *                   set false to show commits all the way back to origin.
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setStopOnCopy($bool = true)
     {
-        $startDate = date(self::DATE_FORMAT, strtotime("-$days days"));
-        $cmd = sprintf(
-            "%s log --xml -r {%s}:HEAD -v %s 2>&1",
-            $this->svn,
-            $startDate, 
-            $repo
-        );
-        if ($limit) {
-            $cmd .= " --limit $limit";
+        $this->stopOnCopy = (bool)$bool;
+        return $this;
+    }
+
+    /**
+     * Returns true if the Slog instance is configured to stop on copy.
+     *
+     * @return bool True if the Slog instance is configured to stop on copy.
+     */
+    public function getStopOnCopy()
+    {
+        return $this->stopOnCopy;
+    }
+
+    private function load()
+    {
+        if ($this->getDays()) {
+            $startDate = date(self::DATE_FORMAT, strtotime("-{$this->getDays()} days"));
+            $revision  = "--revision {{$startDate}}:HEAD";
+        } else {
+            $revision = '';
         }
-        $this->debug("Executing cmd: $cmd");
+        $limit      = $this->getLimit() ? "--limit {$this->getLimit()}" : '';
+        $stopOnCopy = $this->getStopOnCopy() ? "--stop-on-copy" : '';
+        $repo       = $this->getRepo();
+
+        $cmd = "{$this->svn} log {$this->svnOpts} --xml {$revision} {$limit} {$stopOnCopy} -v {$repo} 2>&1";
+
+        $this->debug("Executing command: {$cmd}");
         $xml = $this->fetchXml($cmd);
         $this->data = simplexml_load_string($xml);
     }
@@ -234,7 +387,7 @@ class Slog
     public function __toString()
     {
         try {
-            $this->load($this->repo, $this->days, $this->limit);
+            $this->load();
         } catch (Exception $e) {
             $msg = sprintf( "\nERROR(%s): %s\n\nSTACK TRACE:\n%s\n\n",
                 $e->getCode(),
@@ -284,9 +437,33 @@ class Slog
         }
         return true;
     }
-    
+
+    /**
+     * Loads and sets the formatter to be used for output, based on
+     * a short name and a cli object (for style preferences).
+     *
+     * @param string    $name Short name of the Formatter class to load.
+     * @param CliParser $cli  Command line options to use (for style preferences)
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setFormatterByName($name, CliParser $cli)
+    {
+        $format = ucfirst(strtolower($name));
+        $class  = 'Slog_Formatter_' . $format;
+        $file   = dirname(__FILE__) . "/Slog/Formatter/{$format}.php";
+        if (!is_readable($file)) {
+            throw new Exception("Could not load formatter: $format. Tried to load from $file.");
+        }
+        require_once($file);
+        $formatter = new $class($cli);
+        $this->setFormatter($formatter);
+        return $this;
+    }
+
     /**
      * Set the formatter to be used by the log printer.
+     * @see setFormatterByName()
      *
      * @param SvnLog_Formatter_Interface $formatter Formatting implementation
      *                                              to use for printing the
@@ -309,5 +486,28 @@ class Slog
     {
         return $this->formatter;
     }
-    
+
+    /**
+     * Set string of additional command line opts to send to svn log.
+     *
+     * @param string $opts String of additional command line opts to send to svn log.
+     *
+     * @return Slog (supports fluent interface)
+     */
+    public function setSvnOpts($opts)
+    {
+        $this->svnOpts = $opts;
+        return $this;
+    }
+
+    /**
+     * Returns the string of additional command line opts to send to svn log.
+     *
+     * @return String of additional command line opts to send to svn log.
+     */
+    public function getSvnOpts()
+    {
+        return $this->svnOpts;
+    }
+
 }

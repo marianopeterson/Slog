@@ -37,6 +37,13 @@ class CliParser
     private $opts = array();
 
     /**
+     * Array of unrecognized args (no matching entry in $this->spec).
+     *
+     * @var array<string>
+     */
+    private $unrecognized = array();
+
+    /**
      * Map of specifications for allowable parameters, keyed by short name.
      *
      * @var array<string:complex>
@@ -124,23 +131,30 @@ class CliParser
             $nextArg = ($i + 1 < $argc) ? $argv[$i + 1] : null;
 
             if (strpos($arg, '=') !== false) { // -a=foo, --author=foo
+                $unrecognized = $arg; // raw value that will be added to the
+                                      // unrecognized list if we can't find it
+                                      // in $this->spec
                 $tmp   = explode('=', $arg);
                 $name  = trim(trim($tmp[0]), '-');
                 $value = trim($tmp[1]);
             } elseif ($nextArg && substr($nextArg, 0, 1) != '-') { // -a foo, --author foo
+                $unrecognized = $arg . " " . $nextArg;
                 $name  = trim(trim($arg), '-');
                 $value = trim($nextArg);
                 $i++;
             } else { // -v, --verbose
+                $unrecognized = $arg;
                 $name  = trim(trim($arg), '-');
                 $value = null;
             }
             $this->debug("load(): analyzing input \"$name\"=\"$value\"");
+            $matched = false;
 
             foreach ($this->spec as $spec) {
                 $this->debug("load():    comparing to option ({$spec['short']}, {$spec['long']})");
                 if ($name == $spec['short'] || $name == $spec['long']) {
                     $this->debug("load():    MATCHES ({$spec['short']}, {$spec['long']})");
+                    $matched = true;
                     if ($spec['type'] == self::TYPE_FLAG) {
                         $this->opts[$spec['short']] = true;
                     } elseif ($spec['type'] == self::TYPE_ARRAY) {
@@ -158,6 +172,10 @@ class CliParser
                     }
                     break;
                 }
+            }
+
+            if (!$matched) {
+                $this->unrecognized[] = trim($unrecognized);
             }
         }
         return $this;
@@ -205,5 +223,10 @@ class CliParser
     {
         return;
         print "[DEBUG] $msg\n";
+    }
+
+    public function getUnrecognizedOpts()
+    {
+        return implode(" ", $this->unrecognized);
     }
 }
