@@ -65,14 +65,6 @@ if ($cli->get('days' === null)) {
 } elseif ($cli->get('days') != 0) {
     $slog->setDays($cli->get('days'));
 }
-<<<<<<< HEAD
-// END: get repo ////////////////////////////////
-
-$slog = new Slog($cli->get('repo',  $repo),
-                 $cli->get('days',  DEFAULT_DAYS),
-                 $cli->get('limit', DEFAULT_LIMIT));
-=======
->>>>>>> Pass unrecognized CLI options to svn. Enabled stop on copy.
 if ($cli->get('debug')) {
     $slog->setDebug(true);
 }
