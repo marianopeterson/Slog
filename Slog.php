@@ -118,7 +118,7 @@ class Slog
      */
     public function setRepo($path)
     {
-        $this->repo = $repoUrl;
+        $this->repo = $path;
         return $this;
     }
 
