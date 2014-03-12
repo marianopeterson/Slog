@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<log>
+<logentry
+   revision="39927">
+<author>john.doe</author>
+<date>2013-02-14T01:56:31.266879Z</date>
+<paths>
+<path
+   kind=""
+   action="M">/trunk/java/com/offers/actions/ShowIframeAction.java</path>
+</paths>
+<msg>https://jira.example/browse/MONEY-5152 - fixing exception when no sale exists</msg>
+</logentry>
+<logentry
+   revision="39928">
+<author>john.doe</author>
+<date>2013-02-14T22:10:02.932443Z</date>
+<paths>
+<path
+   kind=""
+   action="M">/trunk/java/com/offers/actions/ShowIframeAction.java</path>
+</paths>
+<msg>log for $frame hit in qa</msg>
+</logentry>
+<logentry
+   revision="39929">
+<author>john.doe</author>
+<date>2013-02-15T01:56:20.112053Z</date>
+<paths>
+<path
+   kind=""
+   action="M">/trunk/resources/fragments/generic_js.jsp</path>
+</paths>
+<msg>https://jira.example/browse/MONEY-5153 - fix preferred currency api issue causing NaN when prices are greater than 1000</msg>
+</logentry>
+<logentry
+   revision="39930">
+<author>john.doe</author>
+<date>2013-02-15T02:07:27.337600Z</date>
+<paths>
+<path
+   kind=""
+   action="D">/trunk/db/m160/post/new-pricing.sql</path>
+<path
+   kind=""
+   copyfrom-path="/trunk/db/m160/post/whalepricing for new-app.sql"
+   copyfrom-rev="39928"
+   action="A">/trunk/db/ran on QA/new-pricing.sql</path>
+</paths>
+<msg>move script to turn on whale pricing for new-app out of the release</msg>
+</logentry>
+<logentry
+   revision="39931">
+<author>mary.smith</author>
+<date>2013-02-15T22:32:02.829957Z</date>
+<paths>
+<path
+   kind=""
+   action="A">/trunk/static/images/new-app/f_layout/EarnSilver.png</path>
+<path
+   kind=""
+   action="A">/trunk/static/images/new-app/f_layout/EarnSilverRollover.png</path>
+<path
+   kind=""
+   action="M">/trunk/static/statics/new-app/new-appFLayout.css</path>
+</paths>
+<msg>Update to new-app f layout (facebook only) updating the earn silver image. Reference Ticket: https://jira.example/browse/MONEY-5155</msg>
+</logentry>
+<logentry
+   revision="39932">
+<author>john.doe</author>
+<date>2013-02-16T00:17:24.765629Z</date>
+<paths>
+<path
+   kind=""
+   action="M">/trunk/resources/health.jsp</path>
+</paths>
+<msg>rm scribe check from health.jsp</msg>
+</logentry>
+<logentry
+   revision="39933">
+<author>john.doe</author>
+<date>2013-02-16T00:20:06.245851Z</date>
+<paths>
+<path
+   kind=""
+   action="M">/trunk/resources/health.jsp</path>
+</paths>
+<msg>m</msg>
+</logentry>
+</log>
