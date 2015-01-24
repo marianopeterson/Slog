@@ -37,7 +37,7 @@ class Slog_Formatter_ShortSummary implements Slog_Formatter_Interface
         }
 
         if ($this->reverse) {
-            rsort($msg);
+            rsort($msg, SORT_NATURAL);
         }
         return $delim . implode($delim, $msg) . $delim;
     }

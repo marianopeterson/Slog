@@ -38,7 +38,7 @@ class Slog_Formatter_OneLine implements Slog_Formatter_Interface
             $msg[] = $out;
         }
         if ($this->reverse) {
-            rsort($msg);
+            rsort($msg, SORT_NATURAL);
         }
         return implode('', $msg);
     }

@@ -33,7 +33,7 @@ class Slog_Formatter_Summary implements Slog_Formatter_Interface
                 date("D, d M Y h:i A", strtotime((string)$commit->date))
             );
             $out .= "\n" . wordwrap(trim($commit->msg), 80) . "\n\n";
-            
+
             $out .= "Changed paths:\n";
             $format = "   %s %s\n";
             foreach ($commit->paths->path as $path) {
@@ -43,7 +43,7 @@ class Slog_Formatter_Summary implements Slog_Formatter_Interface
         }
 
         if ($this->reverse) {
-            rsort($msg);
+            rsort($msg, SORT_NATURAL);
         }
         return $delim . implode($delim, $msg) . $delim;
     }
