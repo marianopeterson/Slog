@@ -1,6 +1,8 @@
+# Slog
 Command line utility for exploring the SVN commit log.
 
 Example:
+
     cd ~/svn-project
     slog --help
 
